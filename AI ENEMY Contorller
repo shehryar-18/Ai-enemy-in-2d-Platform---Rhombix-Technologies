@@ -1,0 +1,78 @@
+using UnityEngine;
+
+public class EnemyController : MonoBehaviour
+{
+    public Transform pointA;
+    public Transform pointB;
+    public Transform player;
+
+    public float patrolSpeed = 3f;
+    public float chaseSpeed = 2f;
+    public float chaseRange = 2f;
+    public float stopDistance = 0.2f;
+
+    private Transform currentTarget;
+    private Rigidbody2D rb;
+    private bool isChasing = false;
+
+    void Start()
+    {
+        rb = GetComponent<Rigidbody2D>();
+        currentTarget = pointB;
+    }
+
+    void Update()
+    {
+        float distanceToPlayer = Vector2.Distance(transform.position, player.position);
+
+        // Decide state based on distance to player
+        isChasing = distanceToPlayer < chaseRange;
+
+        if (isChasing)
+        {
+            Chase();
+        }
+        else
+        {
+            Patrol();
+        }
+    }
+
+    void Patrol()
+    {
+        Vector2 direction = (currentTarget.position - transform.position).normalized;
+        rb.linearVelocity = new Vector2(direction.x * patrolSpeed, rb.linearVelocity.y);
+
+        // Switch target when close enough to current one
+        if (Vector2.Distance(transform.position, currentTarget.position) < stopDistance)
+        {
+            currentTarget = (currentTarget == pointB) ? pointA : pointB;
+        }
+
+        Flip(direction.x);
+    }
+
+    void Chase()
+    {
+        Vector2 direction = (player.position - transform.position).normalized;
+        rb.linearVelocity = new Vector2(direction.x * chaseSpeed, rb.linearVelocity.y);
+
+        Flip(direction.x);
+    }
+
+    void Flip(float directionX)
+    {
+        if (directionX > 0)
+            transform.localScale = new Vector3(1, 1, 1);
+        else if (directionX < 0)
+            transform.localScale = new Vector3(-1, 1, 1);
+    }
+
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        if (collision.gameObject.CompareTag("Player"))
+        {
+            Debug.Log("Player Hit");
+        }
+    }
+}
